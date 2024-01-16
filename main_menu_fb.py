@@ -6,6 +6,7 @@ import requests
 from login import FbBot
 from mainfb import main_create_posts
 from threading import Thread
+import subprocess
 
 
 class Fbmenu():
@@ -18,6 +19,7 @@ class Fbmenu():
         with open("counter.json", "w") as f:
             json.dump(counter, f)
 
+        self.content = 'Текст'
         self.selenium_settings = {}
         self.stop_flag = False
         self.activation_code = ''
@@ -34,18 +36,18 @@ class Fbmenu():
 
         # Label для отображения количества отправленных сообщений
         self.sent_label = tk.Label(root, text=f"Отправил: 0", width=13, height=4, bg='#c5b7b6', 
-                                   anchor='sw', padx=23, pady=10, font=('arial',16,'bold'))
+                                   anchor='s', padx=16, pady=10, font=('arial',16,'bold'))
         self.sent_label.place(x=20,y=110)
 
         # Кнопка Старт
         self.start_button = tk.Button(root, text="Старт", width=10, height=2, font=('arial',16,'bold'),
                                       bg='#746b6c', command=self.on_start_click)
-        self.start_button.place(x=45,y=130)
+        self.start_button.place(x=50,y=130)
 
 
         # Label для выбора что отправлять фото текст фото+текст
         self.content_label = tk.Label(root, text=f"Рассылать:", width=13, height=4, bg='#c5b7b6', 
-                                      anchor='nw', padx=23, pady=10, font=('arial',16,'bold'))
+                                      anchor='nw', padx=16, pady=10, font=('arial',16,'bold'))
         self.content_label.place(x=20,y=250)
 
         # Переменная для хранения выбранного значения
@@ -70,15 +72,15 @@ class Fbmenu():
 
         # Label для выбора времени между отправками сообщений
         self.time_label = tk.Label(root, text="""Время задержки между \nотправками сообщений:\n              секунд""", 
-                                   width=22, 
+                                   width=20, 
                                    height=4, 
                                    bg='#c5b7b6', 
-                                   anchor='nw',
+                                   anchor='n',
                                    justify='left',
                                    padx=10, 
                                    pady=10, 
                                    font=('arial',16,'bold'))
-        self.time_label.place(x=236,y=250)
+        self.time_label.place(x=235,y=250)
 
         # Поле ввода времени задержки
         self.delay_entry = tk.Entry(root, width=6, font=('arial', 14))
@@ -95,8 +97,8 @@ class Fbmenu():
                 pass
         self.groups_count = len(groups)
                 
-        self.import_label = tk.Label(root, text=f"""Импортировано групп: {self.groups_count}""", 
-                                   width=22, 
+        self.import_label = tk.Label(root, text=f"""Добавлено групп: {self.groups_count}""", 
+                                   width=20, 
                                    height=4, 
                                    bg='#c5b7b6', 
                                    anchor='sw',
@@ -114,14 +116,14 @@ class Fbmenu():
 
 
         # Label для добавления фото
-        self.photo_label = tk.Label(root, text=f"Загружено: {len(self.file_paths)} шт.", width=25, height=4, bg='#c5b7b6', 
+        self.photo_label = tk.Label(root, text=f"Загружено: {len(self.file_paths)} шт.", width=23, height=4, bg='#c5b7b6', 
                                     anchor='sw', padx=23, pady=10, font=('arial',16,'bold'))
         self.photo_label.place(x=235,y=110)
 
         # Кнопка добавить фото
         self.add_photo_button = tk.Button(root, text="Выбрать фото для отправки", width=25, height=1, 
                                           font=('arial',16,'bold'),bg='#746b6c', command=self.add_photo)
-        self.add_photo_button.place(x=243,y=130)
+        self.add_photo_button.place(x=241,y=130)
 
         # Кнопка удалить фото
         self.del_photo_button = tk.Button(root, text="Удалить", width=8, height=1, 
@@ -132,41 +134,48 @@ class Fbmenu():
 
         # Label для авторизации в акк фб
         self.autorisation_label = tk.Label(root, text=f"Вы авторизованы в аккаунт:\n{self.account_fb}", 
-                                           width=27,
+                                           width=25,
                                            height=6, 
                                            bg='#c5b7b6', 
                                            anchor='sw', 
                                            padx=10, 
                                            pady=10, 
                                            font=('arial',16,'bold'))
-        self.autorisation_label.place(x=535,y=250)
+        self.autorisation_label.place(x=530,y=250)
 
         # Кнопка авторизация в акк
         self.autorization_button = tk.Button(root, text="Авторизоваться в фейсбук", width=25, height=1, 
                                              font=('arial',16,'bold'),bg='#746b6c', 
                                              command=self.autorisation_fb)
-        self.autorization_button.place(x=544,y=265)
+        self.autorization_button.place(x=537,y=257)
 
         # Кнопка выхода из аккаунта
         self.unautorization_button = tk.Button(root, text="Выйти из аккаунта", width=25, height=1, 
                                                font=('arial',16,'bold'),bg='#746b6c', 
                                                command=self.unautorisation_fb)
-        self.unautorization_button.place(x=544,y=310)
+        self.unautorization_button.place(x=537,y=305)
 
 
 
 
         # Label для ввода текста
-        self.text_message_label = tk.Label(root, text=f"Текст сообщения:", width=40, height=6, 
+        self.text_message_label = tk.Label(root, text=f"Текст сообщения:", width=39, height=6, 
                                            bg='#c5b7b6', anchor='nw', padx=10, pady=10, 
-                                           font=('arial',16,'bold'))
+                                           font=('arial',15,'bold'))
         self.text_message_label.place(x=20,y=390)
 
 
         # Поле ввода текста
-        self.text_entry = tk.Text(root , width=47, height=5, font=('arial', 14))
+        self.text_entry = tk.Text(root , width=42, height=5, font=('arial', 14))
         self.scrollbar = tk.Scrollbar(root, command=self.text_entry.yview)
-        self.scrollbar.place(x=495, y=435, height=110)
+        self.scrollbar.place(x=485, y=436, height=113)
+
+        self.text_entry.bind("<Control-v>", self.paste_from_clipboard)
+        #self.text_entry.bind("<Control-м>", self.paste_from_clipboard_gr)
+
+        self.context_menu_text = tk.Menu(self.text_entry, tearoff=0)
+        self.context_menu_text.add_command(label="Вставить", command=self.paste_from_clipboard)
+        self.text_entry.bind("<Button-3>", self.show_context_menu)
 
         self.text_entry.config(yscrollcommand=self.scrollbar.set)
         self.text_entry.place(x=30, y=435)
@@ -179,6 +188,13 @@ class Fbmenu():
         self.load_settings()
 
 
+
+    def show_context_menu(self, event):
+        self.context_menu_text.post(event.x_root, event.y_root)
+
+    def paste_from_clipboard(self):
+        clipboard_text = self.root.clipboard_get()
+        self.text_entry.insert(tk.INSERT, clipboard_text)
 
     
     def load_settings(self):
@@ -201,6 +217,10 @@ class Fbmenu():
                     self.account_fb = self.saved_settings['account_fb']
                 except:
                     pass
+                try:
+                    self.content = self.saved_settings['content']
+                except:
+                    pass
         except FileNotFoundError:
             self.saved_settings = {}
         self.photo_label['text'] = f"Загружено: {len(self.file_paths)} шт."
@@ -208,6 +228,7 @@ class Fbmenu():
         self.delay_entry.insert(0, self.wait_time)
         self.text_entry.insert("1.0", self.message_text)
         self.autorisation_label['text'] = f"Вы авторизованы в аккаунт:\n{self.account_fb}"
+        self.selected_content.set(self.content)
 
 
     def save_settings(self):
@@ -276,6 +297,14 @@ class Fbmenu():
 
 
 
+    def show_context_menu_gr(self, event):
+        self.contex_menu.post(event.x_root, event.y_root)
+
+    def paste_from_clipboard_gr(self):
+        clipbard_text = self.groups_window.clipboard_get()
+        self.groups_list.insert(tk.INSERT, clipbard_text)
+
+
 
     def add_group(self):
         self.groups_window = tk.Toplevel(self.root)
@@ -286,6 +315,15 @@ class Fbmenu():
         # поле для ввода групп
         self.groups_list = tk.Text(self.groups_window, width=45, height=20, font=('arial', 14))
         self.groups_list.pack(pady=15)
+
+        self.groups_list.bind("<Control-v>", self.paste_from_clipboard_gr)
+        #self.groups_list.bind("<Control-м>", self.paste_from_clipboard_gr)
+
+        self.contex_menu = tk.Menu(self.groups_list, tearoff=0)
+        self.contex_menu.add_command(label="Вставить", command=self.paste_from_clipboard_gr)
+
+        # Привязываем контекстное меню к событию правой кнопки мыши
+        self.groups_list.bind("<Button-3>", self.show_context_menu_gr)
 
         grps = ''
         with open('groups.txt', 'r') as f:
@@ -316,7 +354,7 @@ class Fbmenu():
             except:
                 pass
         self.groups_count = len(groups)
-        self.import_label['text'] = f"""Импортировано групп: {self.groups_count}"""
+        self.import_label['text'] = f"""Добавлено групп: {self.groups_count}"""
 
 
     def on_start_click(self):
@@ -334,6 +372,8 @@ class Fbmenu():
         self.save_settings()
 
         self.content = self.selected_content.get()
+        self.saved_settings['content'] = self.content
+        self.save_settings()
 
         with open('groups.txt', 'r') as f:
             try:
@@ -433,8 +473,12 @@ class Fbmenu():
             counte = self.counte['count']
         except:
             counte = 0
-        self.sent_label['text'] = f"Отправил: {counte}"
+        if counte == self.groups_count:
+            self.start_button['text'] = "Старт"
+            self.start_button['command'] = self.on_start_click
 
+        self.sent_label['text'] = f"Отправил: {counte}"
+            
         self.root.after(2000, self.cnt_updater)
 
         
@@ -455,10 +499,18 @@ class Fbmenu():
 
 
 
+    def get_hwid(self):
+        try:
+            result = subprocess.check_output(['wmic', 'csproduct', 'get', 'uuid']).decode('utf-8')
+            hwid = result.split('\n')[1].strip()
+            return hwid
+        except Exception:
+            return None
+
 
 
     def check_validation(self):
-        hwid = 210953322#self.get_hwid()
+        hwid = self.get_hwid()
         with open("settings.json", "r") as f:
             self.saved_settings = json.load(f)
         self.activation_code = self.saved_settings['activation_code']

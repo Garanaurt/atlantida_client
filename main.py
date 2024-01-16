@@ -12,10 +12,12 @@ class MyApp:
         self.end_day = '-'
         self.autorization_status = 'Нет авторизации, для авторизации нажмите шестеренку'
         self.root = root
-        self.root.title("ATLANTIDA app")
+        self.root.title("Poster")
         self.root['bg'] = "#6279bb"
         self.root.geometry('900x580')
         self.root.resizable(width=False, height=False)
+        self.font = ('ubuntu', 11)
+        self.root.option_add("*Font", self.font)
 
         # Иконки
         self.settings_image = PhotoImage(file='icons/settings.png')
@@ -23,12 +25,12 @@ class MyApp:
 
         # Авторизация статус
         self.autorization_status_label = tk.Label(root, text=self.autorization_status, bg='#c5b7b6', 
-                                                  width=55, anchor='w')
+                                                  width=51, anchor='w')
         self.autorization_status_label.place(x=1,y=2)
 
         # Конец подписки
         self.date_label = tk.Label(root, text=f"Подписка закончится: {self.end_day}", bg='#c5b7b6', 
-                                   width=56, anchor='w')
+                                   width=51, anchor='w')
         self.date_label.place(x=450,y=2)
 
         # Кнопка настроек
@@ -73,7 +75,7 @@ class MyApp:
 
 
     def check_validation(self):
-        hwid = 210953322#self.get_hwid()
+        hwid = self.get_hwid()
         url = f'http://3.80.29.21/check_activation/{self.activation_code}/hwid/{hwid}'
         try:
             responce = requests.get(url)
@@ -102,6 +104,12 @@ class MyApp:
                 self.autorization_status_label['text'] = self.autorization_status
                 self.end_day = "-"
                 self.date_label['text'] = f"Подписка закончится: {self.end_day}"
+            else:
+                self.autorization_status = 'Лицензия активирована'
+                self.autorization_status_label['text'] = self.autorization_status
+                self.end_day = self.validation_ok['end']
+                self.date_label['text'] = f"Подписка закончится: {self.end_day}"
+                Fbmenu(self.root)
         else:
             self.autorization_status = 'Не могу связаться с сервером'
             self.autorization_status_label['text'] = self.autorization_status
@@ -116,6 +124,15 @@ class MyApp:
     
 
     # Открыть настройки
+    def show_context_menu(self, event):
+        self.context_menu.post(event.x_root, event.y_root)
+
+    def paste_from_clipboard(self):
+        clipboard_text = self.settings_window.clipboard_get()
+        self.activation_code.insert(tk.INSERT, clipboard_text)
+    
+
+    # Открыть настройки
     def open_settings(self):
         self.settings_window = tk.Toplevel(self.root)
         self.settings_window.title("Введи код активации и нажми подтвердить")
@@ -126,6 +143,11 @@ class MyApp:
         self.activation_code = tk.Entry(self.settings_window, width=50)
         self.activation_code.pack(pady=10)
 
+
+        self.context_menu = tk.Menu(self.activation_code, tearoff=0)
+        self.context_menu.add_command(label="Вставить", command=self.paste_from_clipboard)
+        self.activation_code.bind("<Button-3>", self.show_context_menu)
+
         # Кнопка подтверждения кода
         self.confirm_button = tk.Button(self.settings_window, text="Подтвердить", command=lambda: self.process_code(str(self.activation_code.get())))
         self.confirm_button.pack()
@@ -135,7 +157,7 @@ class MyApp:
     def process_code(self, code):
         self.settings_window.destroy()
         self.activation_code = code
-        self.check_validation()       
+        self.check_validation()      
         self.saved_settings["activation_code"] = code
         self.saved_settings["end_day"] = self.end_day
         self.save_settings()

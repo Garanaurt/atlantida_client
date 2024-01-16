@@ -6,9 +6,9 @@ from time import sleep
 import pyperclip
 import os
 import pickle
-from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
 import json
+from selenium.webdriver.common.action_chains import ActionChains
 
 
 
@@ -25,6 +25,7 @@ PHOTO_BUTTON = 'div[aria-label="Фото/видео"]'
 
 class FbBotMain:
     def __init__(self):
+        ChromeDriverManager().install()
         chrome_options = Options()
         chrome_options.add_argument("--lang=en")
         chrome_options.add_argument("--start-maximized")
@@ -39,39 +40,39 @@ class FbBotMain:
         chrome_options.add_argument("--disable-audio-output")
         chrome_options.add_argument("--disable-features=AudioServiceOutOfProcess")
 
-        ChromeDriverManager().install()
-
         self.driver = self.get_chromedriver(chrom_options=chrome_options)
         sleep(2)
 
-    def hz(self):
-        pass
 
 
     def create_post(self, group, text=None, media_list=None):
         self.driver.get(group)
         sleep(2)
+
         try:
             self.driver.find_element(By.CSS_SELECTOR, NEW_POST_AREA).click()
         except Exception:
-            print('Не нашел кнопку новый пост')
+            print('')
         sleep(5)
+
         if text is not None:
             try:
                 pyperclip.copy(text)
                 area = self.driver.find_element(By.CSS_SELECTOR, TEXT_AREA)
                 area.click()
                 sleep(2)
-                area.send_keys(Keys.CONTROL, 'v')
+
+                action = ActionChains(self.driver)
+                action.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
                 sleep(3)
+
             except Exception as e:
                 print("не вставил текст", e)
         sleep(1)
+
         if media_list:
             try:
-                for media in media_list:
-                    path = media
-                    print(path)
+                for path in media_list:
                     try:
                         self.driver.find_element(By.CSS_SELECTOR, MEDIA_AREA).send_keys(path)
                     except:
@@ -83,8 +84,9 @@ class FbBotMain:
                         self.driver.find_element(By.CSS_SELECTOR, MEDIA_AREA).send_keys(path)
                     sleep(3)
             except Exception as e:
-                print("не вставил медиа", e)
+                print(e)
         sleep(1)
+
         try:
             sleep(2)
             self.driver.find_elements(By.CSS_SELECTOR, SEND_BUTTON_AREA)[-1].click()
@@ -95,17 +97,26 @@ class FbBotMain:
 
 
 
-
-
     def quit_driver(self):
         pickle.dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
         self.driver.quit()
 
 
 
+    def is_64bit(self):
+        return os.environ.get("PROCESSOR_ARCHITECTURE", "").endswith("64") or os.environ.get("PROCESSOR_ARCHITEW6432", "") == "AMD64"
+
+
+
     def get_chromedriver(self, chrom_options=None):
-        chrome_options = chrom_options
-        driver = webdriver.Chrome(options=chrome_options)
+        current_dir_path = os.getcwd()
+        driver_path_end = ''
+        if self.is_64bit:
+            driver_path_end = '-win64'
+        else:
+            driver_path_end = '-win32'
+        service = webdriver.ChromeService(executable_path=f'{current_dir_path}\chromedriver{driver_path_end}\chromedriver.exe')
+        driver = webdriver.Chrome(options=chrom_options, service=service)
         try:
             cookies = pickle.load(open("cookies.pkl", "rb"))
             driver.get("https://facebook.com")
@@ -136,26 +147,23 @@ class FbBotMain:
             self.driver.find_element(By.CSS_SELECTOR, USER_PASS_AREA).send_keys(Keys.ENTER)
             sleep(3)
         except Exception as e:
-            print('Не смог войти в акк, нужен перезапуск скрипта', e)
+            print(e)
             self.quit_driver()
 
 
 
-
 def main_create_posts(text=None, media_list=None, wait_time=60, all_grps=[]):
+    was_send = 0
     with open("selenium.json", "r") as f:
         saved_settings = json.load(f)
     content = saved_settings['content']
     if content == 'Фото':
-        text = None
         media_list = media_list
     elif content == 'Текст':
         text = text
-        media_list = None
     elif content == "Фото+Текст":
         text=text
         media_list=media_list
-    was_send = 0
     bott = FbBotMain()
     counter = {}
     for group in all_grps:
@@ -165,11 +173,9 @@ def main_create_posts(text=None, media_list=None, wait_time=60, all_grps=[]):
         if flag:
             break
         result = bott.create_post(group, text, media_list)
-        if result == True:
-            was_send += 1
-            counter['count'] = was_send
-            with open("counter.json", "w") as f:
-                json.dump(counter, f)
-            #self.sent_label['text'] = f"Отправил: {was_send}"
+        was_send += 1
+        counter['count'] = was_send
+        with open("counter.json", "w") as f:
+            json.dump(counter, f)
         sleep(int(wait_time))
     bott.quit_driver()

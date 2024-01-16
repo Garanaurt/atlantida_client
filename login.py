@@ -4,6 +4,7 @@ from selenium import webdriver
 from time import sleep
 from selenium.webdriver.chrome.options import Options
 import pickle
+from bs4 import BeautifulSoup
 
 
 
@@ -30,8 +31,23 @@ class FbBot:
 
 
     def quit_driver(self):
-        name = self.driver.find_elements(By.CSS_SELECTOR, 'span.x1lliihq.x6ikm8r.x10wlt62.x1n2onr6')
-        account = name[0].text
+        # Нажимаем на нопку профиль
+        element = self.driver.find_element(By.ID, '\:Rqir3aj9emhpapd5aq\:')
+        parent_element = element.find_element(By.XPATH, '..')
+        parent_element.click()
+
+        html_content = self.driver.page_source
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        span_element = soup.select_one('a.x1xmf6yo > div:nth-child(1) > div:nth-child(2) > span')
+        if span_element :
+            words = span_element.text.split(' ')
+            if len(words) in range(2,3):
+                account = words
+            else:
+                account = "Авторизован"
+        else:
+            account = "Авторизован"
         pickle.dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
         self.driver.quit()
         return account
